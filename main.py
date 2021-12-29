@@ -19,7 +19,7 @@ def getBottomModel(host, user, password, dbname):
     for i in cursor:
         tableList.append(str(i))
     for tableName in tableList:
-        code = re.sub('\D', '', tableName)  # 取出表名中的数字，即股票代码code
+        code = re.sub('\D', '', tableName)
         table = 's_' + code
         sql_to_get_min_price = 'select dateTime, minPrice from ' + table + \
                                ' where minPrice = (select  min(minPrice) from ' + table + ') limit 1'
