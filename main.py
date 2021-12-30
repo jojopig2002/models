@@ -24,4 +24,7 @@ def run():
     print('end time: {}'.format(datetime.datetime.now()))
 
 
-run()
+try:
+    run()
+except Exception as e:
+    print(str(e))
