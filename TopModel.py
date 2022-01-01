@@ -7,15 +7,12 @@ from Model import Model
 
 
 class TopModel(Model):
+    outputTable = 'top_model_data'
 
     def getModel(self, currentDate):
-        tableList = []
         dataList = []
-        # self.truncateTable('top_model_data', db)
-        cursor = self.conn.cursor()
-        cursor.execute('show tables where tables_in_stock_data like "s_%"')
-        for i in cursor:
-            tableList.append(str(i))
+        self.truncateTable(self.outputTable)
+        tableList = self.getStockTableList()
         for tableName in tableList:
             code = re.sub('\D', '', tableName)
             table = 's_' + code
@@ -67,7 +64,7 @@ class TopModel(Model):
                             backRate = int(100 * ((currentEndPrice - rightMinPrice) / rightMinPrice))
                             data = [code, stockName, leftMinPrice, leftMinPriceDate, maxPrice, maxPriceDate,
                                     rightMinPrice, rightMinPriceDate, upRate, downRate, backRate,
-                                    datetime.datetime.now().date()]
+                                    str(datetime.datetime.now().date()) + ' ' + str(datetime.datetime.now().time())]
                             dataList.append(data)
                             print(str(data))
 
@@ -79,8 +76,7 @@ class TopModel(Model):
                                    'up_rate', 'down_rate', 'back_rate',
                                    'last_modified_date'])
         df.to_sql(
-            name='top_model_data',
+            name=self.outputTable,
             con=self.engine,
             index=False,
             if_exists='append')
-        self.conn.close()

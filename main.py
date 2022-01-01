@@ -12,7 +12,7 @@ from TopModel import TopModel
 def run():
     host = 'localhost'
     user = 'root'
-    password = 'xxx'
+    password = 'memore8111'
     dbname = 'STOCK_DATA'
     startTime = datetime.datetime.now()
     print('start time: {}'.format(startTime))
@@ -20,8 +20,9 @@ def run():
     engine = create_engine(
         'mysql+pymysql://' + user + ':' + password + '@' + host + ':' + '3306/' + dbname,
         encoding='utf8')
-    # BottomModel(conn, engine).getModel("")
+    BottomModel(conn, engine).getModel("")
     TopModel(conn, engine).getModel("2021-12-31")
+    conn.close()
     endTime = datetime.datetime.now()
     print('end time: {}'.format(endTime))
     print('total time: {}'.format(endTime - startTime))
