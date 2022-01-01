@@ -1,13 +1,15 @@
-class Model:
-    def __init__(self, host, user, password, dbname, pymysql, re, pd, create_engine):
-        self.host = host
-        self.user = user
-        self.password = password
-        self.dbname = dbname
-        self.pymysql = pymysql
-        self.re = re
-        self.pd = pd
-        self.create_engine = create_engine
+import pymysql
 
-    def getModel(self):
+
+class Model:
+    def __init__(self, conn, engine):
+        self.engine = engine
+        self.conn = conn
+
+    def getModel(self, currentDate):
         pass
+
+    def truncateTable(self, tableName):
+        cursor = self.conn.cursor()
+        cursor.execute()
+        cursor.close()

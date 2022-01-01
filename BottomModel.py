@@ -1,23 +1,25 @@
 import datetime
+import re
+
+import pandas as pd
 
 from Model import Model
 
 
 class BottomModel(Model):
-    def getModel(self):
+    def getModel(self, currentDate):
         tableList = []
         dataList = []
-        db = self.pymysql.connect(host=self.host, user=self.user, password=self.password, db=self.dbname)
-        cursor = db.cursor()
+        cursor = self.conn.cursor()
         cursor.execute('show tables where tables_in_stock_data like "s_%"')
         for i in cursor:
             tableList.append(str(i))
         for tableName in tableList:
-            code = self.re.sub('\D', '', tableName)
+            code = re.sub('\D', '', tableName)
             table = 's_' + code
             sql_to_get_min_price = 'select dateTime, minPrice from ' + table + \
                                    ' where minPrice = (select  min(minPrice) from ' + table + ') limit 1'
-            minPriceRow = self.pd.read_sql(sql_to_get_min_price, db)
+            minPriceRow = pd.read_sql(sql_to_get_min_price, self.conn)
             if minPriceRow.empty:
                 continue
             else:
@@ -30,7 +32,7 @@ class BottomModel(Model):
                                             " where datetime <= '" + minPriceDate + \
                                             "' and datetime >= DATE_SUB('" + \
                                             minPriceDate + "', INTERVAL 3 MONTH)) limit 1"
-                leftMaxPriceRow = self.pd.read_sql(sql_to_get_left_max_price, db)
+                leftMaxPriceRow = pd.read_sql(sql_to_get_left_max_price, self.conn)
                 if leftMaxPriceRow.empty:
                     continue
                 else:
@@ -44,7 +46,7 @@ class BottomModel(Model):
                                                  " where datetime >= '" + minPriceDate + \
                                                  "' and datetime <= DATE_ADD('" + \
                                                  minPriceDate + "', INTERVAL 12 MONTH)) limit 1"
-                    rightMaxPriceRow = self.pd.read_sql(sql_to_get_right_max_price, db)
+                    rightMaxPriceRow = pd.read_sql(sql_to_get_right_max_price, self.conn)
                     if rightMaxPriceRow.empty:
                         continue
                     else:
@@ -58,20 +60,16 @@ class BottomModel(Model):
                         dataList.append(data)
                         print(str(data))
 
-        df = self.pd.DataFrame(dataList,
-                               columns=['stock_code', 'stock_name',
-                                        'left_max_price', 'left_max_price_date',
-                                        'min_price', 'min_price_date',
-                                        'right_max_price', 'right_max_price_date',
-                                        'down_rate', 'up_rate',
-                                        'last_modified_date'])
-        engine = self.create_engine(
-            'mysql+pymysql://' + self.user + ':' + self.password + '@' + self.host + ':' + '3306/' + self.dbname,
-            encoding='utf8')
-
+        df = pd.DataFrame(dataList,
+                          columns=['stock_code', 'stock_name',
+                                   'left_max_price', 'left_max_price_date',
+                                   'min_price', 'min_price_date',
+                                   'right_max_price', 'right_max_price_date',
+                                   'down_rate', 'up_rate',
+                                   'last_modified_date'])
         df.to_sql(
             name='bottom_model_data',
-            con=engine,
+            con=self.engine,
             index=False,
             if_exists='append')
-        db.close()
+        self.conn.close()

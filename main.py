@@ -1,12 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import datetime
-import re
 
-import pandas as pd
 import pymysql
-import requests
-from bs4 import BeautifulSoup
 from sqlalchemy import create_engine
 
 from BottomModel import BottomModel
@@ -18,10 +14,17 @@ def run():
     user = 'root'
     password = 'xxx'
     dbname = 'STOCK_DATA'
-    print('start time: {}'.format(datetime.datetime.now()))
-    # BottomModel(host, user, password, dbname, pymysql, re, pd, create_engine).getModel()
-    TopModel(host, user, password, dbname, pymysql, re, pd, create_engine).getModel()
-    print('end time: {}'.format(datetime.datetime.now()))
+    startTime = datetime.datetime.now()
+    print('start time: {}'.format(startTime))
+    conn = pymysql.connect(host=host, user=user, password=password, db=dbname)
+    engine = create_engine(
+        'mysql+pymysql://' + user + ':' + password + '@' + host + ':' + '3306/' + dbname,
+        encoding='utf8')
+    # BottomModel(conn, engine).getModel("")
+    TopModel(conn, engine).getModel("2021-12-31")
+    endTime = datetime.datetime.now()
+    print('end time: {}'.format(endTime))
+    print('total time: {}'.format(endTime - startTime))
 
 
 try:

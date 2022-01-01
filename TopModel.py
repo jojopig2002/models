@@ -1,24 +1,27 @@
 import datetime
+import re
+
+import pandas as pd
 
 from Model import Model
 
 
 class TopModel(Model):
 
-    def getModel(self):
+    def getModel(self, currentDate):
         tableList = []
         dataList = []
-        db = self.pymysql.connect(host=self.host, user=self.user, password=self.password, db=self.dbname)
-        cursor = db.cursor()
+        # self.truncateTable('top_model_data', db)
+        cursor = self.conn.cursor()
         cursor.execute('show tables where tables_in_stock_data like "s_%"')
         for i in cursor:
             tableList.append(str(i))
         for tableName in tableList:
-            code = self.re.sub('\D', '', tableName)
+            code = re.sub('\D', '', tableName)
             table = 's_' + code
             sql_to_get_max_price = 'select dateTime, maxPrice from ' + table + \
                                    ' where maxPrice = (select max(maxPrice) from ' + table + ') limit 1'
-            maxPriceRow = self.pd.read_sql(sql_to_get_max_price, db)
+            maxPriceRow = pd.read_sql(sql_to_get_max_price, self.conn)
             if maxPriceRow.empty:
                 continue
             else:
@@ -31,7 +34,7 @@ class TopModel(Model):
                                             " where datetime <= '" + maxPriceDate + \
                                             "' and datetime >= DATE_SUB('" + \
                                             maxPriceDate + "', INTERVAL 1 MONTH)) limit 1"
-                leftMinPriceRow = self.pd.read_sql(sql_to_get_left_min_price, db)
+                leftMinPriceRow = pd.read_sql(sql_to_get_left_min_price, self.conn)
                 if leftMinPriceRow.empty:
                     continue
                 else:
@@ -45,7 +48,7 @@ class TopModel(Model):
                                                  " where datetime >= '" + maxPriceDate + \
                                                  "' and datetime <= DATE_ADD('" + \
                                                  maxPriceDate + "', INTERVAL 1 MONTH)) limit 1"
-                    rightMinPriceRow = self.pd.read_sql(sql_to_get_right_min_price, db)
+                    rightMinPriceRow = pd.read_sql(sql_to_get_right_min_price, self.conn)
                     if rightMinPriceRow.empty:
                         continue
                     else:
@@ -54,25 +57,30 @@ class TopModel(Model):
                         stockName = rightMinPriceRow['stockName'][0]
                         upRate = int(100 * (maxPrice - leftMinPrice) / leftMinPrice)
                         downRate = int(100 * (maxPrice - rightMinPrice) / maxPrice)
-                        data = [code, stockName, leftMinPrice, leftMinPriceDate, maxPrice, maxPriceDate,
-                                rightMinPrice, rightMinPriceDate, upRate, downRate, datetime.datetime.now().date()]
-                        dataList.append(data)
-                        print(str(data))
+                        sql_to_get_current_date_data = 'select endPrice from ' + table + ' where datetime = "' + \
+                                                       currentDate + '"'
+                        currentDataRow = pd.read_sql(sql_to_get_current_date_data, self.conn)
+                        if currentDataRow.empty:
+                            continue
+                        else:
+                            currentEndPrice = currentDataRow['endPrice'][0]
+                            backRate = int(100 * ((currentEndPrice - rightMinPrice) / rightMinPrice))
+                            data = [code, stockName, leftMinPrice, leftMinPriceDate, maxPrice, maxPriceDate,
+                                    rightMinPrice, rightMinPriceDate, upRate, downRate, backRate,
+                                    datetime.datetime.now().date()]
+                            dataList.append(data)
+                            print(str(data))
 
         df = pd.DataFrame(dataList,
                           columns=['stock_code', 'stock_name',
                                    'left_min_price', 'left_min_price_date',
                                    'max_price', 'max_price_date',
                                    'right_min_price', 'right_min_price_date',
-                                   'up_rate', 'down_rate',
+                                   'up_rate', 'down_rate', 'back_rate',
                                    'last_modified_date'])
-        engine = self.create_engine(
-            'mysql+pymysql://' + self.user + ':' + self.password + '@' + self.host + ':' + '3306/' + self.dbname,
-            encoding='utf8')
-
         df.to_sql(
             name='top_model_data',
-            con=engine,
+            con=self.engine,
             index=False,
             if_exists='append')
-        db.close()
+        self.conn.close()
