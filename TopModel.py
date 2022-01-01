@@ -9,7 +9,7 @@ from Model import Model
 class TopModel(Model):
     outputTable = 'top_model_data'
 
-    def getModel(self, currentDate):
+    def getModel(self, lastTxnDateInDB):
         dataList = []
         self.truncateTable(self.outputTable)
         tableList = self.getStockTableList()
@@ -55,7 +55,7 @@ class TopModel(Model):
                         upRate = int(100 * (maxPrice - leftMinPrice) / leftMinPrice)
                         downRate = int(100 * (maxPrice - rightMinPrice) / maxPrice)
                         sql_to_get_current_date_data = 'select endPrice from ' + table + ' where datetime = "' + \
-                                                       currentDate + '"'
+                                                       lastTxnDateInDB + '"'
                         currentDataRow = pd.read_sql(sql_to_get_current_date_data, self.conn)
                         if currentDataRow.empty:
                             continue
@@ -66,8 +66,9 @@ class TopModel(Model):
                                     rightMinPrice, rightMinPriceDate, upRate, downRate, backRate,
                                     str(datetime.datetime.now().date()) + ' ' + str(datetime.datetime.now().time())]
                             dataList.append(data)
-                            print(str(data))
+                            # print(str(data))
 
+        print('total records to update top model is {}'.format(len(dataList)))
         df = pd.DataFrame(dataList,
                           columns=['stock_code', 'stock_name',
                                    'left_min_price', 'left_min_price_date',

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 
+import pandas as pd
 import pymysql
 from sqlalchemy import create_engine
 
@@ -20,8 +21,22 @@ def run():
     engine = create_engine(
         'mysql+pymysql://' + user + ':' + password + '@' + host + ':' + '3306/' + dbname,
         encoding='utf8')
+    dateRow = pd.read_sql("select dateTime from S_000001 order by dateTime desc limit 1", conn)
+    lastTxnDateInDB = ''
+    if dateRow.empty:
+        print('db is empty')
+        return
+    else:
+        lastTxnDateInDB = dateRow['dateTime'][0]
+        print('Last txn date is {}, today\'s date is {}'.format(lastTxnDateInDB, datetime.datetime.now().date()))
+        if lastTxnDateInDB < str(datetime.datetime.now().date()):
+            print('probably need to fetch latest data first')
+        else:
+            print('data is up to date')
     BottomModel(conn, engine).getModel("")
-    TopModel(conn, engine).getModel("2021-12-31")
+    # lastTxnDateInDB should be last txn date in db, probably need to fetch latest data first!!!!
+
+    TopModel(conn, engine).getModel(lastTxnDateInDB)
     conn.close()
     endTime = datetime.datetime.now()
     print('end time: {}'.format(endTime))

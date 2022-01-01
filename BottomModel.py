@@ -9,7 +9,7 @@ from Model import Model
 class BottomModel(Model):
     outputTable = 'bottom_model_data'
 
-    def getModel(self, currentDate):
+    def getModel(self, lastTxnDateInDB):
         dataList = []
         self.truncateTable(self.outputTable)
         tableList = self.getStockTableList()
@@ -58,8 +58,9 @@ class BottomModel(Model):
                                 rightMaxPrice, rightMaxPriceDate, downRate, upRate, str(datetime.datetime.now().date())
                                 + ' ' + str(datetime.datetime.now().time())]
                         dataList.append(data)
-                        print(str(data))
+                        # print(str(data))
 
+        print('total records to update bottom model is {}'.format(len(dataList)))
         df = pd.DataFrame(dataList,
                           columns=['stock_code', 'stock_name',
                                    'left_max_price', 'left_max_price_date',

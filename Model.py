@@ -3,7 +3,7 @@ class Model:
         self.engine = engine
         self.conn = conn
 
-    def getModel(self, currentDate):
+    def getModel(self, lastTxnDateInDB):
         pass
 
     def getStockTableList(self):
