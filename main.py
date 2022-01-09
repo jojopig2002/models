@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import datetime
+import logging
 
 import pandas as pd
 import pymysql
@@ -46,4 +47,5 @@ def run():
 try:
     run()
 except Exception as e:
+    logging.exception(e)
     print(str(e))
