@@ -54,9 +54,18 @@ class BottomModel(Model):
                         stockName = rightMaxPriceRow['stockName'][0]
                         downRate = int(100 * (leftMaxPrice - minPrice) / leftMaxPrice)
                         upRate = int(100 * (rightMaxPrice - minPrice) / minPrice)
-                        data = [code, stockName, leftMaxPrice, leftMaxPriceDate, minPrice, minPriceDate,
-                                rightMaxPrice, rightMaxPriceDate, downRate, upRate, str(datetime.datetime.now().date())
-                                + ' ' + str(datetime.datetime.now().time())]
+                        sql_to_get_current_date_data = 'select endPrice from ' + table + ' where datetime = "' + \
+                                                       lastTxnDateInDB + '"'
+                        currentDataRow = pd.read_sql(sql_to_get_current_date_data, self.conn)
+                        if currentDataRow.empty:
+                            continue
+                        else:
+                            currentEndPrice = currentDataRow['endPrice'][0]
+                            diffBetweenMinAndNow = int(100 * ((currentEndPrice - minPrice) / minPrice))
+                            data = [code, stockName, leftMaxPrice, leftMaxPriceDate, minPrice, minPriceDate,
+                                    rightMaxPrice, rightMaxPriceDate, downRate, upRate, diffBetweenMinAndNow,
+                                    str(datetime.datetime.now().date()) + ' ' + str(datetime.datetime.now().time())]
+
                         dataList.append(data)
                         # print(str(data))
 
@@ -66,7 +75,7 @@ class BottomModel(Model):
                                    'left_max_price', 'left_max_price_date',
                                    'min_price', 'min_price_date',
                                    'right_max_price', 'right_max_price_date',
-                                   'down_rate', 'up_rate',
+                                   'down_rate', 'up_rate', 'diff_between_min_and_now',
                                    'last_modified_date'])
         df.to_sql(
             name=self.outputTable,

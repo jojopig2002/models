@@ -34,7 +34,7 @@ def run():
             print('probably need to fetch latest data first')
         else:
             print('data is up to date')
-    BottomModel(conn, engine).getModel("")
+    BottomModel(conn, engine).getModel(lastTxnDateInDB)
     # lastTxnDateInDB should be last txn date in db, probably need to fetch latest data first!!!!
 
     TopModel(conn, engine).getModel(lastTxnDateInDB)
